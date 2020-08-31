@@ -1,24 +1,39 @@
-from isbnlib import meta, desc, cover, classify, goom
+from isbnlib import meta, desc, cover, classify, goom, isbn_from_words
 import datetime
 
 # \\n\\n<<<\\n{description}\\n<<<\\n
-SERVICE = 'openl'
-
-isbn = input("Type in ISBN: ")
+SERVICE = 'goob'
 
 current_time = datetime.datetime.now()
 fmt = '%Y%m%d%H%M'
 
-def isbn_to_book_desc(isbn):
+def isbn_to_json(isbn):
     # get info from isbnlib
-    book = meta(isbn)
+    try:
+        book = meta(isbn, SERVICE)
+    except:
+        print("There appears to have been an error.")
+        while is_correct_book != "Y":
+            possible_book_isbn = isbn_from_words(input("Type the title of the book. "))
+            book = meta(possible_book_isbn, SERVICE)
+            print(book["Title"])
+            is_correct_book = input("Is this the correct book? y/n: ")
+ 
     description = desc(isbn)
     image = f"[img[http://covers.openlibrary.org/b/isbn/{isbn}-L.jpg]]"
-    title = book["Title"]
+    title = book["Title"].title()
     author = book["Authors"]
     # convert author list to string
     str_author = ",".join(author)
     year_published = book["Year"]
+    
+    # did I read it yet or not?
+    print(title)
+    which_tag = input("Read or To-read? ")
+    if which_tag.upper() == "READ":
+        tags = "Watched/Listened/Read"
+    else:
+        tags = "Books to Read"
     
     #remove line breaks and double quotes from description (TiddlyWiki can't have 'em)
     description = description.replace('\n', ' ').replace('\r', ' ').replace('"', '\'')
@@ -31,7 +46,7 @@ def isbn_to_book_desc(isbn):
     author_field = f'"{str_author}"'
     book_year_published_field = f'"{year_published}"'
     image_field = f'"{image}"'
-    tags = f'"Watched/Listened/Read"'
+    tags_field = f'"{tags}"'
     type = '"text/vnd.tiddlywiki"'
     
     #translate all book info into transclusions for TiddlyWiki text field
@@ -47,12 +62,14 @@ def isbn_to_book_desc(isbn):
     end = '}]'
     
 
-    tw5_code = f'{start}"image":{image_field},"bookauthors":{author_field},"bookyearpublished":{book_year_published_field},"created":{created},"text":{text},"type":{type},"title":{tiddler_title},"tags":{tags},"modified":{modified},"bookdesc":{desc_field}{end}'
+    tw5_code = f'{start}"image":{image_field},"bookauthors":{author_field},"bookyearpublished":{book_year_published_field},"created":{created},"text":{text},"type":{type},"title":{tiddler_title},"tags":{tags_field},"modified":{modified},"bookdesc":{desc_field}{end}'
 
     file = open(f"{title}.json", "w")
     file.write(tw5_code)
     file.close()
 
-isbn_to_book_desc(isbn)
+isbn = input("Type in the ISBN: ")
+isbn_to_json(isbn)
+
 
 
